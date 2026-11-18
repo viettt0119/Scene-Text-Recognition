@@ -1,0 +1,97 @@
+[project]
+name = "scene-text-recognition"
+version = "1.0.0"
+description = "Production-grade Scene Text Recognition (CRNN + CTC) with a FastAPI service and CLI."
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.12"
+authors = [{ name = "viettt0119" }]
+keywords = ["ocr", "scene-text-recognition", "crnn", "ctc", "pytorch", "fastapi"]
+classifiers = [
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Scientific/Engineering :: Image Recognition",
+    "Typing :: Typed",
+]
+dependencies = [
+    "anyio>=4.6,<5",
+    "fastapi>=0.120,<1",
+    "numpy>=2.1,<3",
+    "pillow>=11.0,<14",
+    "pydantic>=2.10,<3",
+    "pydantic-settings>=2.7,<3",
+    "python-multipart>=0.0.20",
+    "structlog>=25.1",
+    "tenacity>=9.0,<10",
+    "torch>=2.6,<3",
+    "typer>=0.15,<1",
+    "uvicorn[standard]>=0.34,<1",
+]
+
+[project.scripts]
+scene-text = "scene_text.interfaces.cli.main:app"
+
+[dependency-groups]
+dev = [
+    "httpx>=0.28,<1",
+    "mypy>=1.15",
+    "pytest>=8.3",
+    "pytest-cov>=6.0",
+    "ruff>=0.9",
+]
+
+[build-system]
+requires = ["uv_build>=0.8,<0.12"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-name = "scene_text"
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "W", "F", "I", "B", "UP", "SIM", "RUF", "N", "S", "PTH", "C4", "RET", "TID", "PL", "ANN"]
+ignore = [
+    "PLR0913",  # CLI commands and model constructors legitimately take many args
+    "PLR2004",  # magic values are fine in tensor shape arithmetic
+    "ANN401",
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S101", "ANN", "PLR2004", "S311"]
+"src/scene_text/infrastructure/data/synthetic.py" = ["S311"]  # non-crypto RNG for data augmentation
+
+[tool.ruff.lint.flake8-bugbear]
+extend-immutable-calls = ["typer.Option", "typer.Argument", "fastapi.File", "fastapi.Depends"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+mypy_path = "src"
+packages = ["scene_text"]
+plugins = ["pydantic.mypy"]
+
+[[tool.mypy.overrides]]
+module = ["torch.*"]
+disallow_untyped_calls = false
+
+[tool.pytest.ini_options]
+minversion = "8.0"
+testpaths = ["tests"]
+addopts = "-ra --strict-markers --strict-config"
+markers = [
+    "slow: tests that train a model for a few seconds",
+]
+filterwarnings = ["error::pytest.PytestUnraisableExceptionWarning"]
+
+[tool.coverage.run]
+source = ["scene_text"]
+branch = true
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true
+exclude_also = ["if TYPE_CHECKING:", "raise NotImplementedError", "@overload"]
